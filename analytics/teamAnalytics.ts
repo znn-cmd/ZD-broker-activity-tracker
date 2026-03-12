@@ -42,6 +42,9 @@ export type TeamSummary = {
   teamTotals: Record<MetricKey, number>;
   teamReportCount: number;
   rankings: Record<MetricKey, { userId: string; fullName: string; value: number }[]>;
+  teamExpectedWorkingDays: number;
+  teamSubmittedDays: number;
+  teamCompletionPct: number | null;
 };
 
 function emptyTotals(): Record<MetricKey, number> {
@@ -86,12 +89,23 @@ export function buildTeamSummary(
 
   const teamTotals = emptyTotals();
   let teamReportCount = 0;
+  let teamExpectedWorkingDays = 0;
+  let teamSubmittedDays = 0;
   brokers.forEach((b) => {
     METRIC_KEYS.forEach((key) => {
       teamTotals[key] += b.totals[key];
     });
     teamReportCount += b.reportCount;
+    if (b.discipline) {
+      teamExpectedWorkingDays += b.discipline.expectedWorkingDays;
+      teamSubmittedDays += b.discipline.submittedDays;
+    }
   });
+
+  const teamCompletionPct =
+    teamExpectedWorkingDays > 0
+      ? Math.round((teamSubmittedDays / teamExpectedWorkingDays) * 1000) / 10
+      : null;
 
   const rankings: TeamSummary["rankings"] = {} as TeamSummary["rankings"];
   METRIC_KEYS.forEach((metricKey) => {
@@ -114,6 +128,9 @@ export function buildTeamSummary(
     teamTotals,
     teamReportCount,
     rankings,
+    teamExpectedWorkingDays,
+    teamSubmittedDays,
+    teamCompletionPct,
   };
 }
 

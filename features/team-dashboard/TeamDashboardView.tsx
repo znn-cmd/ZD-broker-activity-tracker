@@ -1,7 +1,17 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { TeamDashboardData } from "./team-actions";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 type Props = {
   data: TeamDashboardData;
@@ -12,6 +22,9 @@ type Props = {
 export function TeamDashboardView({ data, startDate, endDate }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string | "all">(
+    "all",
+  );
 
   function setPeriod(start: string, end: string) {
     const p = new URLSearchParams(searchParams.toString());
@@ -22,6 +35,32 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
 
   const { summary, buyerConversions, sellerConversions } = data;
   const s = summary;
+
+  const filteredBrokers = useMemo(() => {
+    if (selectedBrokerId === "all") return s.brokers;
+    return s.brokers.filter((b) => b.user.userId === selectedBrokerId);
+  }, [s.brokers, selectedBrokerId]);
+
+  const teamDailySeries = useMemo(() => {
+    const map = new Map<
+      string,
+      { date: string; leads: number; meetings: number; bookings: number; sales: number }
+    >();
+    s.brokers.forEach((b) => {
+      b.reports.forEach((r) => {
+        const key = r.reportDate;
+        const existing =
+          map.get(key) ??
+          { date: key, leads: 0, meetings: 0, bookings: 0, sales: 0 };
+        existing.leads += r.buyer_incoming_lead_total ?? 0;
+        existing.meetings += r.buyer_meeting_held ?? 0;
+        existing.bookings += r.buyer_number_of_bookings ?? 0;
+        existing.sales += r.seller_total_sales_amount ?? 0;
+        map.set(key, existing);
+      });
+    });
+    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [s.brokers]);
 
   return (
     <div className="space-y-4">
@@ -37,7 +76,32 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
             Export PDF
           </a>
         </p>
-        <PeriodQuickSelect startDate={startDate} endDate={endDate} onSelect={setPeriod} />
+        <div className="flex flex-wrap items-center gap-3">
+          <PeriodQuickSelect
+            startDate={startDate}
+            endDate={endDate}
+            onSelect={setPeriod}
+          />
+          {s.brokers.length > 1 && (
+            <div className="flex items-center gap-1 text-xs">
+              <span className="text-slate-500">Broker:</span>
+              <select
+                value={selectedBrokerId}
+                onChange={(e) =>
+                  setSelectedBrokerId(e.target.value as string | "all")
+                }
+                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+              >
+                <option value="all">All</option>
+                {s.brokers.map((b) => (
+                  <option key={b.user.userId} value={b.user.userId}>
+                    {b.user.fullName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
       </div>
 
       {(s.brokers.some((b) => (b.discipline?.completionPct ?? 100) < 80 || (b.discipline?.missedDates?.length ?? 0) > 0) ||
@@ -84,6 +148,27 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
           label="Sales amount"
           value={s.teamTotals.seller_total_sales_amount}
           format="money"
+        />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiCard
+          label="Reports submitted / Expected"
+          value={s.teamSubmittedDays}
+          secondary={`${s.teamSubmittedDays} / ${s.teamExpectedWorkingDays}`}
+        />
+        <KpiCard
+          label="Report discipline %"
+          value={s.teamCompletionPct ?? 0}
+          format="percent"
+        />
+        <KpiCard
+          label="Avg reports per broker"
+          value={
+            s.brokers.length > 0
+              ? s.teamReportCount / s.brokers.length
+              : 0
+          }
         />
       </div>
 
@@ -138,7 +223,7 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
               </tr>
             </thead>
             <tbody>
-              {s.brokers.map((b) => (
+              {filteredBrokers.map((b) => (
                 <tr key={b.user.userId} className="border-t border-slate-100">
                   <td className="px-3 py-2 font-medium text-slate-900">{b.user.fullName}</td>
                   <td className="px-3 py-2 text-slate-700">{b.reportCount}</td>
@@ -181,6 +266,55 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
           ))}
         </div>
       </div>
+
+      {teamDailySeries.length > 0 && (
+        <div className="rounded-xl border border-slate-200 bg-white p-3">
+          <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Team trend / Динамика команды по дням
+          </h2>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={teamDailySeries}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="date" tick={{ fontSize: 10 }} tickMargin={6} />
+                <YAxis tick={{ fontSize: 10 }} tickMargin={4} />
+                <Tooltip
+                  contentStyle={{ fontSize: 11 }}
+                  formatter={(value: unknown) =>
+                    typeof value === "number"
+                      ? value.toFixed(0)
+                      : String(value)
+                  }
+                />
+                <Line
+                  type="monotone"
+                  dataKey="leads"
+                  name="Leads"
+                  stroke="#0ea5e9"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="bookings"
+                  name="Bookings"
+                  stroke="#6366f1"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="sales"
+                  name="Sales amount"
+                  stroke="#22c55e"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -189,19 +323,30 @@ function KpiCard({
   label,
   value,
   format = "number",
+  secondary,
 }: {
   label: string;
   value: number;
-  format?: "number" | "money";
+  format?: "number" | "money" | "percent";
+  secondary?: string;
 }) {
-  const display =
-    format === "money"
-      ? value.toLocaleString(undefined, { maximumFractionDigits: 0 })
-      : value.toLocaleString();
+  let display: string;
+  if (format === "money") {
+    display = value.toLocaleString(undefined, { maximumFractionDigits: 0 });
+  } else if (format === "percent") {
+    display = `${value.toFixed(1)}%`;
+  } else {
+    display = value.toLocaleString();
+  }
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-3">
       <p className="text-[11px] font-medium text-slate-500">{label}</p>
       <p className="mt-1 text-lg font-semibold text-slate-900">{display}</p>
+      {secondary && (
+        <p className="text-[10px] text-slate-500">
+          {secondary}
+        </p>
+      )}
     </div>
   );
 }
