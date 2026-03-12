@@ -6,6 +6,7 @@ import { authOptions } from "@/server/auth/auth-options";
 import {
   getReportByUserAndDate,
   upsertReportForUserAndDate,
+  listReportsByUserAndDateRange,
 } from "@/lib/repositories/reports-repository";
 import { getPlansForUserMonth } from "@/lib/repositories/plans-repository";
 import { calculateMetricPaceForUserMonth } from "@/analytics/planning";
@@ -68,11 +69,22 @@ export async function loadDailyReportWithPlanning(
   const refDate = new Date(reportDate);
   const year = refDate.getUTCFullYear();
   const month = refDate.getUTCMonth() + 1;
+  const monthStart = new Date(Date.UTC(year, month - 1, 1))
+    .toISOString()
+    .slice(0, 10);
+  const monthEnd = new Date(Date.UTC(year, month, 0))
+    .toISOString()
+    .slice(0, 10);
 
   const plans = await getPlansForUserMonth({ userId, year, month });
+  const monthlyReports = await listReportsByUserAndDateRange({
+    userId,
+    startDate: monthStart,
+    endDate: monthEnd,
+  });
   const paceStats = await calculateMetricPaceForUserMonth({
     plans,
-    reports: report ? [report] : [],
+    reports: monthlyReports,
     year,
     month,
     referenceDate: refDate,
@@ -120,10 +132,21 @@ export async function saveDailyReport(
   const refDate = new Date(parsed.reportDate);
   const year = refDate.getUTCFullYear();
   const month = refDate.getUTCMonth() + 1;
+  const monthStart = new Date(Date.UTC(year, month - 1, 1))
+    .toISOString()
+    .slice(0, 10);
+  const monthEnd = new Date(Date.UTC(year, month, 0))
+    .toISOString()
+    .slice(0, 10);
   const plans = await getPlansForUserMonth({ userId, year, month });
+  const monthlyReports = await listReportsByUserAndDateRange({
+    userId,
+    startDate: monthStart,
+    endDate: monthEnd,
+  });
   const paceStats = await calculateMetricPaceForUserMonth({
     plans,
-    reports: [report],
+    reports: monthlyReports,
     year,
     month,
     referenceDate: refDate,

@@ -215,6 +215,11 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
             <thead className="bg-slate-50 text-left font-semibold text-slate-600">
               <tr>
                 <th className="px-3 py-2">Broker</th>
+                <th className="px-3 py-2 text-right">Leads</th>
+                <th className="px-3 py-2 text-right">Contacts</th>
+                <th className="px-3 py-2 text-right">Qualified</th>
+                <th className="px-3 py-2 text-right">Meetings held</th>
+                <th className="px-3 py-2 text-right">Bookings</th>
                 <th className="px-3 py-2 text-right">Contact rate</th>
                 <th className="px-3 py-2 text-right">Qualification rate</th>
                 <th className="px-3 py-2 text-right">Meeting held rate</th>
@@ -251,6 +256,21 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
                       {b.user.fullName}
                     </td>
                     <td className="px-3 py-1 text-right">
+                      {t.buyer_incoming_lead_total}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.buyer_contact_established}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.buyer_qualified}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.buyer_meeting_held}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.buyer_number_of_bookings}
+                    </td>
+                    <td className="px-3 py-1 text-right">
                       {formatPct(contactRate)}
                     </td>
                     <td className="px-3 py-1 text-right">
@@ -283,6 +303,12 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
             <thead className="bg-slate-50 text-left font-semibold text-slate-600">
               <tr>
                 <th className="px-3 py-2">Broker</th>
+                <th className="px-3 py-2 text-right">Requests</th>
+                <th className="px-3 py-2 text-right">Docs requested</th>
+                <th className="px-3 py-2 text-right">Contracts sent</th>
+                <th className="px-3 py-2 text-right">Listed</th>
+                <th className="px-3 py-2 text-right">Sold</th>
+                <th className="px-3 py-2 text-right">Sales amount</th>
                 <th className="px-3 py-2 text-right">Docs request rate</th>
                 <th className="px-3 py-2 text-right">Contract send rate</th>
                 <th className="px-3 py-2 text-right">Listing conversion</th>
@@ -317,6 +343,24 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
                   <tr key={b.user.userId} className="border-t border-slate-100">
                     <td className="px-3 py-1 font-medium text-slate-900">
                       {b.user.fullName}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_incoming_requests}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_requested_documents}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_sent_contract}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_listed_property}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_sold_objects}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {t.seller_total_sales_amount.toLocaleString()}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {formatPct(docsRate)}

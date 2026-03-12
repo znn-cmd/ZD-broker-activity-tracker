@@ -159,6 +159,57 @@ export function LivePerformancePanel({ state }: Props) {
         })}
       </div>
 
+      {/* Today vs plan (per working day) */}
+      <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+            Today vs plan / Текущий день vs план
+          </p>
+          <p className="text-[10px] text-slate-500">
+            Actual report vs daily target from monthly plan
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-[11px] text-slate-700">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-100">
+                <th className="px-2 py-1 text-left font-semibold">Metric</th>
+                <th className="px-2 py-1 text-right font-semibold">Actual today</th>
+                <th className="px-2 py-1 text-right font-semibold">
+                  Daily target
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {planRows.map(({ metricKey, label }) => {
+                const { stat } = getMetricPace(metricKey);
+                const dailyTarget =
+                  stat?.dailyBaselineMinimumTarget != null
+                    ? stat.dailyBaselineMinimumTarget
+                    : null;
+                let actualToday = 0;
+                if (r) {
+                  actualToday = (r[metricKey] as number) ?? 0;
+                }
+                return (
+                  <tr key={metricKey} className="border-t border-slate-100">
+                    <td className="px-2 py-1">{label}</td>
+                    <td className="px-2 py-1 text-right">
+                      {actualToday.toFixed(
+                        metricKey === "seller_total_sales_amount" ? 0 : 1,
+                      )}
+                    </td>
+                    <td className="px-2 py-1 text-right">
+                      {dailyTarget != null ? dailyTarget.toFixed(1) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* Plan vs actual compact table */}
       <div className="rounded-lg border border-slate-200 bg-slate-50/80 p-3">
         <div className="mb-2 flex items-center justify-between">
