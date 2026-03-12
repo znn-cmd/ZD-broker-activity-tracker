@@ -20,7 +20,9 @@ export function getGoogleAuthClient() {
     private_key: privateKey,
   } as const;
 
-  const auth = google.auth.fromJSON(credentials);
+  const auth = google.auth.fromJSON(credentials) as ReturnType<
+    typeof google.auth.fromJSON
+  > & { scopes?: string[] };
   auth.scopes = ["https://www.googleapis.com/auth/spreadsheets"];
 
   cachedClient = auth;
