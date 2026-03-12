@@ -17,7 +17,9 @@ export async function getDisciplineForPeriod(
   endDate: string,
   reports: DailyReportRecord[],
 ): Promise<DisciplineResult> {
-  const workingDays = await getWorkingDaysInRange(startDate, endDate);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const effectiveEnd = endDate > todayIso ? todayIso : endDate;
+  const workingDays = await getWorkingDaysInRange(startDate, effectiveEnd);
   const submittedSet = new Set(
     reports.filter((r) => r.userId === userId).map((r) => r.reportDate),
   );
@@ -31,7 +33,7 @@ export async function getDisciplineForPeriod(
   return {
     userId,
     startDate,
-    endDate,
+    endDate: effectiveEnd,
     expectedWorkingDays: workingDays.length,
     submittedDays,
     missedDates,

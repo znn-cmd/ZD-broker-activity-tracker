@@ -205,65 +205,141 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white">
-        <h2 className="border-b border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Brokers
+      {/* Buyer funnel by broker */}
+      <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Buyer funnel by broker / Воронка покупателей по брокерам
         </h2>
         <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse text-xs">
-            <thead className="bg-slate-50 text-left text-[11px] font-semibold text-slate-600">
+          <table className="min-w-full border-collapse text-[11px] text-slate-700">
+            <thead className="bg-slate-50 text-left font-semibold text-slate-600">
               <tr>
-                <th className="px-3 py-2">Name</th>
-                <th className="px-3 py-2">Reports</th>
-                <th className="px-3 py-2">Discipline %</th>
-                <th className="px-3 py-2">Leads</th>
-                <th className="px-3 py-2">Meetings</th>
-                <th className="px-3 py-2">Bookings</th>
-                <th className="px-3 py-2">Sales</th>
+                <th className="px-3 py-2">Broker</th>
+                <th className="px-3 py-2 text-right">Contact rate</th>
+                <th className="px-3 py-2 text-right">Qualification rate</th>
+                <th className="px-3 py-2 text-right">Meeting held rate</th>
+                <th className="px-3 py-2 text-right">Bookings / meeting</th>
+                <th className="px-3 py-2 text-right">Bookings / lead</th>
               </tr>
             </thead>
             <tbody>
-              {filteredBrokers.map((b) => (
-                <tr key={b.user.userId} className="border-t border-slate-100">
-                  <td className="px-3 py-2 font-medium text-slate-900">{b.user.fullName}</td>
-                  <td className="px-3 py-2 text-slate-700">{b.reportCount}</td>
-                  <td className="px-3 py-2">
-                    {b.discipline?.completionPct != null
-                      ? `${b.discipline.completionPct}%`
-                      : "—"}
-                  </td>
-                  <td className="px-3 py-2 text-slate-700">{b.totals.buyer_incoming_lead_total}</td>
-                  <td className="px-3 py-2 text-slate-700">{b.totals.buyer_meeting_held}</td>
-                  <td className="px-3 py-2 text-slate-700">{b.totals.buyer_number_of_bookings}</td>
-                  <td className="px-3 py-2 text-slate-700">
-                    {b.totals.seller_total_sales_amount.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
+              {s.brokers.map((b) => {
+                const t = b.totals;
+                const contactRate = safeRate(
+                  t.buyer_contact_established,
+                  t.buyer_incoming_lead_total,
+                );
+                const qualificationRate = safeRate(
+                  t.buyer_qualified,
+                  t.buyer_contact_established,
+                );
+                const meetingHeldRate = safeRate(
+                  t.buyer_meeting_held,
+                  t.buyer_meeting_confirmed,
+                );
+                const bookingsPerMeeting = safeRate(
+                  t.buyer_number_of_bookings,
+                  t.buyer_meeting_held,
+                );
+                const bookingsPerLead = safeRate(
+                  t.buyer_number_of_bookings,
+                  t.buyer_incoming_lead_total,
+                );
+                return (
+                  <tr key={b.user.userId} className="border-t border-slate-100">
+                    <td className="px-3 py-1 font-medium text-slate-900">
+                      {b.user.fullName}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(contactRate)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(qualificationRate)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(meetingHeldRate)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(bookingsPerMeeting)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(bookingsPerLead)}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Seller funnel by broker */}
       <div className="rounded-xl border border-slate-200 bg-white p-3">
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Rankings (top by metric)
+          Seller funnel by broker / Воронка продавцов по брокерам
         </h2>
-        <div className="flex flex-wrap gap-4 text-[11px]">
-          {(["buyer_incoming_lead_total", "buyer_meeting_held", "buyer_number_of_bookings", "seller_total_sales_amount"] as const).map((key) => (
-            <div key={key} className="min-w-[140px] rounded bg-slate-50 p-2">
-              <p className="mb-1 font-semibold text-slate-600">
-                {key.replace(/_/g, " ")}
-              </p>
-              <ol className="list-decimal pl-4">
-                {s.rankings[key].slice(0, 5).map((r) => (
-                  <li key={r.userId}>
-                    {r.fullName}: {r.value}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          ))}
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-[11px] text-slate-700">
+            <thead className="bg-slate-50 text-left font-semibold text-slate-600">
+              <tr>
+                <th className="px-3 py-2">Broker</th>
+                <th className="px-3 py-2 text-right">Docs request rate</th>
+                <th className="px-3 py-2 text-right">Contract send rate</th>
+                <th className="px-3 py-2 text-right">Listing conversion</th>
+                <th className="px-3 py-2 text-right">Sales conversion</th>
+                <th className="px-3 py-2 text-right">Avg sales / sold</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.brokers.map((b) => {
+                const t = b.totals;
+                const docsRate = safeRate(
+                  t.seller_requested_documents,
+                  t.seller_incoming_requests,
+                );
+                const contractRate = safeRate(
+                  t.seller_sent_contract,
+                  t.seller_requested_documents,
+                );
+                const listingConv = safeRate(
+                  t.seller_listed_property,
+                  t.seller_sent_contract,
+                );
+                const salesConv = safeRate(
+                  t.seller_sold_objects,
+                  t.seller_listed_property,
+                );
+                const avgSalesPerSold =
+                  t.seller_sold_objects > 0
+                    ? t.seller_total_sales_amount / t.seller_sold_objects
+                    : null;
+                return (
+                  <tr key={b.user.userId} className="border-t border-slate-100">
+                    <td className="px-3 py-1 font-medium text-slate-900">
+                      {b.user.fullName}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(docsRate)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(contractRate)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(listingConv)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {formatPct(salesConv)}
+                    </td>
+                    <td className="px-3 py-1 text-right">
+                      {avgSalesPerSold != null
+                        ? avgSalesPerSold.toFixed(0)
+                        : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -315,6 +391,67 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
           </div>
         </div>
       )}
+
+      <div className="rounded-xl border border-slate-200 bg-white p-3">
+        <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Rankings (top by metric)
+        </h2>
+        <div className="flex flex-wrap gap-4 text-[11px]">
+          {(
+            [
+              "buyer_incoming_lead_total",
+              "buyer_meeting_held",
+              "buyer_number_of_bookings",
+              "seller_total_sales_amount",
+            ] as const
+          ).map((key) => (
+            <div key={key} className="min-w-[140px] rounded bg-slate-50 p-2">
+              <p className="mb-1 font-semibold text-slate-600">
+                {key.replace(/_/g, " ")}
+              </p>
+              <ol className="list-decimal pl-4">
+                {s.rankings[key].slice(0, 5).map((r) => (
+                  <li key={r.userId}>
+                    {r.fullName}: {r.value}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white">
+        <h2 className="border-b border-slate-100 px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Broker reports / Отчёты брокеров
+        </h2>
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-xs">
+            <thead className="bg-slate-50 text-left text-[11px] font-semibold text-slate-600">
+              <tr>
+                <th className="px-3 py-2">Name</th>
+                <th className="px-3 py-2">Reports</th>
+                <th className="px-3 py-2">Discipline %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredBrokers.map((b) => (
+                <tr key={b.user.userId} className="border-t border-slate-100">
+                  <td className="px-3 py-2 font-medium text-slate-900">
+                    {b.user.fullName}
+                  </td>
+                  <td className="px-3 py-2 text-slate-700">{b.reportCount}</td>
+                  <td className="px-3 py-2">
+                    {b.discipline?.completionPct != null
+                      ? `${b.discipline.completionPct}%`
+                      : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
@@ -351,6 +488,16 @@ function KpiCard({
   );
 }
 
+function safeRate(numerator: number, denominator: number): number | null {
+  if (!Number.isFinite(denominator) || denominator <= 0) return null;
+  return (numerator / denominator) * 100;
+}
+
+function formatPct(value: number | null): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return `${value.toFixed(0)}%`;
+}
+
 function PeriodQuickSelect({
   startDate,
   onSelect,
@@ -360,32 +507,95 @@ function PeriodQuickSelect({
   onSelect: (start: string, end: string) => void;
 }) {
   const now = new Date();
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(today.getUTCDate() - 1);
+  const dayOfWeek = today.getUTCDay() || 7; // 1..7
+  const weekStart = new Date(today);
+  weekStart.setUTCDate(today.getUTCDate() - (dayOfWeek - 1));
+  const weekEnd = new Date(weekStart);
+  weekEnd.setUTCDate(weekStart.getUTCDate() + 6);
   const thisMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
   const thisMonthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0));
   const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
   const lastMonthEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
 
   return (
-    <div className="flex items-center gap-2 text-xs">
+    <div className="flex flex-wrap items-center gap-2 text-xs">
       <span className="text-slate-500">Period:</span>
-      <button
-        type="button"
-        onClick={() =>
-          onSelect(thisMonthStart.toISOString().slice(0, 10), thisMonthEnd.toISOString().slice(0, 10))
+      <QuickButton
+        label="Today"
+        active={
+          startDate === today.toISOString().slice(0, 10) &&
+          startDate === today.toISOString().slice(0, 10)
         }
-        className={`rounded px-2 py-1 ${startDate === thisMonthStart.toISOString().slice(0, 10) ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-      >
-        This month
-      </button>
-      <button
-        type="button"
+        onClick={() => {
+          const d = today.toISOString().slice(0, 10);
+          onSelect(d, d);
+        }}
+      />
+      <QuickButton
+        label="Yesterday"
+        active={startDate === yesterday.toISOString().slice(0, 10)}
+        onClick={() => {
+          const d = yesterday.toISOString().slice(0, 10);
+          onSelect(d, d);
+        }}
+      />
+      <QuickButton
+        label="This week"
+        active={startDate === weekStart.toISOString().slice(0, 10)}
         onClick={() =>
-          onSelect(lastMonthStart.toISOString().slice(0, 10), lastMonthEnd.toISOString().slice(0, 10))
+          onSelect(
+            weekStart.toISOString().slice(0, 10),
+            weekEnd.toISOString().slice(0, 10),
+          )
         }
-        className={`rounded px-2 py-1 ${startDate === lastMonthStart.toISOString().slice(0, 10) ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}
-      >
-        Last month
-      </button>
+      />
+      <QuickButton
+        label="This month"
+        active={startDate === thisMonthStart.toISOString().slice(0, 10)}
+        onClick={() =>
+          onSelect(
+            thisMonthStart.toISOString().slice(0, 10),
+            thisMonthEnd.toISOString().slice(0, 10),
+          )
+        }
+      />
+      <QuickButton
+        label="Last month"
+        active={startDate === lastMonthStart.toISOString().slice(0, 10)}
+        onClick={() =>
+          onSelect(
+            lastMonthStart.toISOString().slice(0, 10),
+            lastMonthEnd.toISOString().slice(0, 10),
+          )
+        }
+      />
     </div>
+  );
+}
+
+function QuickButton({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded px-2 py-1 ${
+        active
+          ? "bg-slate-800 text-white"
+          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+      }`}
+    >
+      {label}
+    </button>
   );
 }
