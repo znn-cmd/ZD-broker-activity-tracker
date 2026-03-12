@@ -29,7 +29,7 @@ export async function getSheetRows(
     range: `${sheetName}!A:Z`,
   });
 
-  return res.data.values;
+  return (res.data.values ?? undefined) as string[][] | undefined;
 }
 
 export async function appendSheetRow(
