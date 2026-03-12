@@ -71,9 +71,10 @@ export function computeScore(options: {
   const sellerActivity = componentScore(sellerActivitySum, refSellerActivity);
   const sellerResult = componentScore(sellerResultSum, refSellerResult);
 
-  const planAdherence = options.planCompletionPct != null
-    ? Math.min(100, options.planCompletionPct)
-    : 50;
+  const planAdherence =
+    options.planCompletionPct != null
+      ? Math.min(100, options.planCompletionPct)
+      : 0;
   const reportingDiscipline = options.disciplinePct != null
     ? Math.min(100, options.disciplinePct)
     : 0;

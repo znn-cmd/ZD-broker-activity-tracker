@@ -179,5 +179,60 @@ export async function updateUserRoleAndStatus(params: {
     }
   }
 }
+export async function createUser(params: {
+  fullName: string;
+  email: string;
+  username: string;
+  passwordHash: string;
+  role: UserRole;
+  teamId?: string | null;
+  teamName?: string | null;
+  isActive?: boolean;
+  telegramChatId?: string | null;
+  reminderEmail?: string | null;
+}): Promise<UserRecord> {
+  const rows = await getSheetRows(SHEET_NAME);
+  const existing: UserRecord[] = [];
 
+  if (rows && rows.length > 1) {
+    const [, ...dataRows] = rows;
+    dataRows.forEach((row, index) => {
+      const parsedRow = parseUserRow(row, index + 2);
+      if (parsedRow) {
+        existing.push(parsedRow.data);
+      }
+    });
+  }
 
+  const emailLower = params.email.toLowerCase();
+  const usernameLower = params.username.toLowerCase();
+  if (
+    existing.some(
+      (u) =>
+        u.email.toLowerCase() === emailLower ||
+        u.username.toLowerCase() === usernameLower,
+    )
+  ) {
+    throw new Error("User with this email or username already exists");
+  }
+
+  const now = new Date().toISOString();
+  const user: UserRecord = {
+    userId: uuidv4(),
+    fullName: params.fullName,
+    email: params.email,
+    username: params.username,
+    passwordHash: params.passwordHash,
+    role: params.role,
+    teamId: params.teamId ?? null,
+    teamName: params.teamName ?? null,
+    isActive: params.isActive ?? true,
+    telegramChatId: params.telegramChatId ?? null,
+    reminderEmail: params.reminderEmail ?? params.email,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  await appendSheetRow(SHEET_NAME, serializeUserRow(user));
+  return user;
+}

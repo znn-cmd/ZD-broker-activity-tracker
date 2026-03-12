@@ -2,7 +2,12 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/server/auth/auth-options";
 import { UserRole, type UserRecord } from "@/types/domain";
-import { listAllUsers, updateUserAdmin } from "@/features/users/user-actions";
+import {
+  listAllUsers,
+  updateUserAdmin,
+  createUserAdmin,
+} from "@/features/users/user-actions";
+import { revalidatePath } from "next/cache";
 
 type SessionUser = {
   id: string;
@@ -32,7 +37,144 @@ export default async function UsersPage() {
           department.
         </p>
       </div>
+      <CreateUserCard />
       <UsersTable users={users} />
+    </div>
+  );
+}
+
+async function createUser(formData: FormData) {
+  "use server";
+  const fullName = String(formData.get("fullName") ?? "");
+  const email = String(formData.get("email") ?? "");
+  const username = String(formData.get("username") ?? "");
+  const password = String(formData.get("password") ?? "");
+  const role = (formData.get("role") as UserRole) ?? UserRole.Manager;
+  const teamId = String(formData.get("teamId") ?? "");
+  const teamName = String(formData.get("teamName") ?? "");
+  const telegramChatId = String(formData.get("telegramChatId") ?? "");
+  const reminderEmail = String(formData.get("reminderEmail") ?? "");
+
+  await createUserAdmin({
+    fullName,
+    email,
+    username,
+    password,
+    role,
+    teamId,
+    teamName,
+    telegramChatId,
+    reminderEmail,
+  });
+
+  revalidatePath("/dashboard/users");
+}
+
+function CreateUserCard() {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-slate-900">
+        Add user / Добавить пользователя
+      </h2>
+      <p className="mt-1 text-xs text-slate-500">
+        Create managers, heads and admins. Password will be stored as a bcrypt
+        hash in the <span className="font-mono">users</span> sheet.
+      </p>
+      <form
+        action={createUser}
+        className="mt-3 grid gap-3 text-xs md:grid-cols-3"
+      >
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Full name</span>
+          <input
+            name="fullName"
+            required
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Email</span>
+          <input
+            type="email"
+            name="email"
+            required
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Username</span>
+          <input
+            name="username"
+            required
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Password</span>
+          <input
+            type="password"
+            name="password"
+            required
+            minLength={6}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Role</span>
+          <select
+            name="role"
+            defaultValue={UserRole.Manager}
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          >
+            <option value={UserRole.Manager}>manager</option>
+            <option value={UserRole.Head}>head</option>
+            <option value={UserRole.Admin}>admin</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">Team ID (optional)</span>
+          <input
+            name="teamId"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">
+            Team name (for heads)
+          </span>
+          <input
+            name="teamName"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">
+            Telegram chat id (optional)
+          </span>
+          <input
+            name="telegramChatId"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className="font-medium text-slate-700">
+            Reminder email (optional)
+          </span>
+          <input
+            type="email"
+            name="reminderEmail"
+            className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-900"
+          />
+        </label>
+        <div className="flex items-end">
+          <button
+            type="submit"
+            className="inline-flex items-center rounded-md bg-sky-600 px-4 py-1.5 text-xs font-semibold text-white shadow hover:bg-sky-500"
+          >
+            Create user
+          </button>
+        </div>
+      </form>
     </div>
   );
 }
@@ -41,8 +183,8 @@ function UsersTable({ users }: { users: UserRecord[] }) {
   if (users.length === 0) {
     return (
       <p className="text-xs text-slate-500">
-        No users found. Add rows to the <span className="font-mono">users</span>{" "}
-        sheet.
+        No users found. Use the form above or add rows to the{" "}
+        <span className="font-mono">users</span> sheet.
       </p>
     );
   }
