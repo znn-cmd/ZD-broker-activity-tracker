@@ -6,7 +6,7 @@ let cachedSheets: sheets_v4.Sheets | null = null;
 function getSheetsClient() {
   if (cachedSheets) return cachedSheets;
   const auth = getGoogleAuthClient();
-  cachedSheets = google.sheets({ version: "v4", auth });
+  cachedSheets = google.sheets({ version: "v4", auth: auth as any });
   return cachedSheets;
 }
 
