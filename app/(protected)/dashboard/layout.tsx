@@ -73,6 +73,10 @@ export default async function DashboardLayout({ children }: Props) {
             <>
               <SidebarLink href="/dashboard/users" label="Users / Пользователи" />
               <SidebarLink href="/dashboard/settings" label="Settings / Настройки" />
+              <SidebarLink
+                href="/dashboard/report-check"
+                label="Report check / Проверка отчетов"
+              />
               <SidebarLink href="/dashboard/audit-log" label="Audit Log" />
               <SidebarLink
                 href="/dashboard/integrations"
