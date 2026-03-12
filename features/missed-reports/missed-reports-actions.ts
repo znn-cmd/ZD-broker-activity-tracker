@@ -31,9 +31,10 @@ export async function loadMissedReports(params: {
   }
 
   const { users } = await getTeamScopeUsers();
-  if (users.length === 0) return [];
+  const managers = users.filter((u) => u.role === UserRole.Manager);
+  if (managers.length === 0) return [];
 
-  const userIds = users.map((u) => u.userId);
+  const userIds = managers.map((u) => u.userId);
   const reports = await listReportsForUsersInDateRange({
     userIds,
     startDate: params.startDate,
@@ -41,7 +42,7 @@ export async function loadMissedReports(params: {
   });
 
   const rows: MissedReportsRow[] = [];
-  for (const user of users) {
+  for (const user of managers) {
     const d = await getDisciplineForPeriod(
       user.userId,
       params.startDate,

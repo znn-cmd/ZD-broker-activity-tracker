@@ -32,7 +32,11 @@ export async function runRemindersForDate(
 
   const users = await getAllUsers();
   const activeWithTelegram = users.filter(
-    (u) => u.isActive && u.telegramChatId && u.telegramChatId.trim() !== "",
+    (u) =>
+      u.role === "manager" &&
+      u.isActive &&
+      u.telegramChatId &&
+      u.telegramChatId.trim() !== "",
   );
 
   for (const user of activeWithTelegram) {

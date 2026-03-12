@@ -44,18 +44,25 @@ type SessionUser = {
   teamId: string | null;
 };
 
-async function getCurrentUserId(): Promise<string> {
+async function getCurrentOrSelectedUserId(
+  targetUserId?: string,
+): Promise<string> {
   const session = await getServerSession(authOptions);
   if (!session?.user) {
     throw new Error("Unauthenticated");
   }
-  return (session.user as SessionUser).id;
+  const me = session.user as SessionUser;
+  if (me.role === "admin" && targetUserId) {
+    return targetUserId;
+  }
+  return me.id;
 }
 
 export async function loadDailyReportWithPlanning(
   reportDate: string,
+  userIdOverride?: string,
 ): Promise<DailyReportWithPlanning> {
-  const userId = await getCurrentUserId();
+  const userId = await getCurrentOrSelectedUserId(userIdOverride);
   const report = await getReportByUserAndDate(userId, reportDate);
 
   const refDate = new Date(reportDate);
@@ -76,8 +83,9 @@ export async function loadDailyReportWithPlanning(
 
 export async function saveDailyReport(
   values: DailyReportPayload,
+  userIdOverride?: string,
 ): Promise<DailyReportWithPlanning> {
-  const userId = await getCurrentUserId();
+  const userId = await getCurrentOrSelectedUserId(userIdOverride);
   const parsed = dailyReportSchema.parse(values);
 
   const payloadWithoutMeta = {

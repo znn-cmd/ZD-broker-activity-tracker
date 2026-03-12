@@ -7,12 +7,17 @@ import type { DailyReportPayload, DailyReportWithPlanning } from "./report-actio
 
 type Props = {
   initialDate: string;
+  userIdOverride?: string;
   onPlanningStateChange?: (state: DailyReportWithPlanning | null) => void;
 };
 
 type Status = "idle" | "saving" | "saved" | "error";
 
-export function DailyReportForm({ initialDate, onPlanningStateChange }: Props) {
+export function DailyReportForm({
+  initialDate,
+  userIdOverride,
+  onPlanningStateChange,
+}: Props) {
   const [date, setDate] = useState(initialDate);
   const [form, setForm] = useState<DailyReportPayload>(() =>
     emptyPayload(initialDate),
@@ -27,7 +32,7 @@ export function DailyReportForm({ initialDate, onPlanningStateChange }: Props) {
     let isMounted = true;
     (async () => {
       try {
-        const state = await loadDailyReportWithPlanning(date);
+        const state = await loadDailyReportWithPlanning(date, userIdOverride);
         if (!isMounted) return;
         if (state.report) {
           setForm({
@@ -71,7 +76,7 @@ export function DailyReportForm({ initialDate, onPlanningStateChange }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [date, onPlanningStateChange]);
+  }, [date, userIdOverride, onPlanningStateChange]);
 
   useMemo(() => {
     if (!serverState?.report) return;
@@ -87,7 +92,7 @@ export function DailyReportForm({ initialDate, onPlanningStateChange }: Props) {
         ...form,
         reportDate: date,
       };
-      const result = await saveDailyReport(normalized);
+      const result = await saveDailyReport(normalized, userIdOverride);
       setServerState(result);
       onPlanningStateChange?.(result);
       setStatus("saved");

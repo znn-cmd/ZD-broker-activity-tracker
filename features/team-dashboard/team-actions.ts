@@ -28,13 +28,15 @@ export async function getTeamScopeUsers(): Promise<{
   if (!session?.user) throw new Error("Unauthenticated");
   const me = session.user as SessionUser;
   const all = await getAllUsers();
-  const active = all.filter((u) => u.isActive);
+  const activeManagers = all.filter(
+    (u) => u.isActive && u.role === UserRole.Manager,
+  );
 
   if (me.role === UserRole.Admin) {
-    return { users: active, teamId: null, teamName: null };
+    return { users: activeManagers, teamId: null, teamName: null };
   }
   if (me.role === UserRole.Head && me.teamId) {
-    const teamUsers = active.filter((u) => u.teamId === me.teamId);
+    const teamUsers = activeManagers.filter((u) => u.teamId === me.teamId);
     const teamName = teamUsers[0]?.teamName ?? null;
     return { users: teamUsers, teamId: me.teamId, teamName };
   }
