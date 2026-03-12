@@ -192,7 +192,14 @@ export function LivePerformancePanel({ state }: Props) {
                   actualToday = (r[metricKey] as number) ?? 0;
                 }
                 return (
-                  <tr key={metricKey} className="border-t border-slate-100">
+                  <tr
+                    key={metricKey}
+                    className={`border-t ${
+                      metricKey === "seller_number_of_cold_calls"
+                        ? "border-t-2 border-slate-300"
+                        : "border-slate-100"
+                    }`}
+                  >
                     <td className="px-2 py-1">{label}</td>
                     <td className="px-2 py-1 text-right">
                       {actualToday.toFixed(
@@ -236,6 +243,8 @@ export function LivePerformancePanel({ state }: Props) {
               {planRows.map(({ metricKey, label }) => {
                 const { stat, pacePct, status } = getMetricPace(metricKey);
                 if (!stat) return null;
+                const isAfterBookings =
+                  metricKey === "seller_number_of_cold_calls";
                 const rowStatusClass =
                   status === "green"
                     ? "bg-emerald-50/70"
@@ -247,7 +256,9 @@ export function LivePerformancePanel({ state }: Props) {
                 return (
                   <tr
                     key={metricKey}
-                    className={`border-t border-slate-100 ${rowStatusClass}`}
+                    className={`border-t ${
+                      isAfterBookings ? "border-t-2" : "border-t"
+                    } border-slate-300 ${rowStatusClass}`}
                   >
                     <td className="px-2 py-1">{label}</td>
                     <td className="px-2 py-1 text-right">

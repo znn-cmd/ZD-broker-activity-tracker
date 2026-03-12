@@ -5,6 +5,7 @@ import {
   calculateSellerConversions,
   type BuyerSellerTotals,
 } from "./conversions";
+import type { MetricPaceStats } from "./planning";
 
 const METRIC_KEYS: MetricKey[] = [
   "buyer_incoming_lead_total",
@@ -31,6 +32,7 @@ export type BrokerStats = {
   totals: Record<MetricKey, number>;
   reportCount: number;
   discipline: DisciplineResult | null;
+  paceStats: MetricPaceStats[] | null;
 };
 
 export type TeamSummary = {
@@ -69,6 +71,7 @@ export function buildTeamSummary(
   users: UserRecord[],
   reportsByUserId: Map<string, DailyReportRecord[]>,
   disciplineByUserId: Map<string, DisciplineResult>,
+  paceByUserId: Map<string, MetricPaceStats[]>,
   startDate: string,
   endDate: string,
   teamId: string | null,
@@ -78,12 +81,14 @@ export function buildTeamSummary(
     const reports = reportsByUserId.get(user.userId) ?? [];
     const totals = aggregateReports(reports);
     const discipline = disciplineByUserId.get(user.userId) ?? null;
+    const paceStats = paceByUserId.get(user.userId) ?? null;
     return {
       user,
       reports,
       totals,
       reportCount: reports.length,
       discipline,
+      paceStats,
     };
   });
 

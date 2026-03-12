@@ -230,6 +230,12 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
             <tbody>
               {s.brokers.map((b) => {
                 const t = b.totals;
+                const getPlan = (metricKey: keyof typeof t) => {
+                  const pace = b.paceStats;
+                  const stat =
+                    pace?.find((p) => p.metricKey === metricKey) ?? null;
+                  return stat?.expectedActualByNow ?? null;
+                };
                 const contactRate = safeRate(
                   t.buyer_contact_established,
                   t.buyer_incoming_lead_total,
@@ -257,18 +263,81 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.buyer_incoming_lead_total}
+                      {getPlan("buyer_incoming_lead_total") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("buyer_incoming_lead_total")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.buyer_incoming_lead_total,
+                              getPlan("buyer_incoming_lead_total")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.buyer_contact_established}
+                      {getPlan("buyer_contact_established") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("buyer_contact_established")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.buyer_contact_established,
+                              getPlan("buyer_contact_established")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.buyer_qualified}
+                      {getPlan("buyer_qualified") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan {getPlan("buyer_qualified")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.buyer_qualified,
+                              getPlan("buyer_qualified")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.buyer_meeting_held}
+                      {getPlan("buyer_meeting_held") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan {getPlan("buyer_meeting_held")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.buyer_meeting_held,
+                              getPlan("buyer_meeting_held")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.buyer_number_of_bookings}
+                      {getPlan("buyer_number_of_bookings") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("buyer_number_of_bookings")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.buyer_number_of_bookings,
+                              getPlan("buyer_number_of_bookings")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {formatPct(contactRate)}
@@ -319,6 +388,12 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
             <tbody>
               {s.brokers.map((b) => {
                 const t = b.totals;
+                const getPlan = (metricKey: keyof typeof t) => {
+                  const pace = b.paceStats;
+                  const stat =
+                    pace?.find((p) => p.metricKey === metricKey) ?? null;
+                  return stat?.expectedActualByNow ?? null;
+                };
                 const docsRate = safeRate(
                   t.seller_requested_documents,
                   t.seller_incoming_requests,
@@ -346,6 +421,19 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.seller_incoming_requests}
+                      {getPlan("seller_incoming_requests") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("seller_incoming_requests")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.seller_incoming_requests,
+                              getPlan("seller_incoming_requests")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.seller_requested_documents}
@@ -355,12 +443,51 @@ export function TeamDashboardView({ data, startDate, endDate }: Props) {
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.seller_listed_property}
+                      {getPlan("seller_listed_property") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("seller_listed_property")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.seller_listed_property,
+                              getPlan("seller_listed_property")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.seller_sold_objects}
+                      {getPlan("seller_sold_objects") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("seller_sold_objects")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.seller_sold_objects,
+                              getPlan("seller_sold_objects")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {t.seller_total_sales_amount.toLocaleString()}
+                      {getPlan("seller_total_sales_amount") != null && (
+                        <div className="text-[10px] text-slate-500">
+                          Plan{" "}
+                          {getPlan("seller_total_sales_amount")!.toFixed(1)} (
+                          {formatPct(
+                            safeRate(
+                              t.seller_total_sales_amount,
+                              getPlan("seller_total_sales_amount")!,
+                            ),
+                          )}
+                          )
+                        </div>
+                      )}
                     </td>
                     <td className="px-3 py-1 text-right">
                       {formatPct(docsRate)}

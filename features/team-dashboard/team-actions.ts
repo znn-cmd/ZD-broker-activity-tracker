@@ -11,6 +11,8 @@ import {
   getTeamSellerConversions,
   type TeamSummary,
 } from "@/analytics/teamAnalytics";
+import { getPlansForUserMonth } from "@/lib/repositories/plans-repository";
+import { calculateMetricPaceForUserMonth } from "@/analytics/planning";
 import { UserRole } from "@/types/domain";
 
 type SessionUser = {
@@ -90,10 +92,31 @@ export async function loadTeamDashboard(params: {
     disciplineByUser.set(user.userId, d);
   }
 
+  const paceByUser = new Map<string, Awaited<ReturnType<typeof calculateMetricPaceForUserMonth>>>();
+  const end = new Date(params.endDate + "T12:00:00Z");
+  const today = new Date();
+  const referenceDate = end > today ? today : end;
+  const year = referenceDate.getUTCFullYear();
+  const month = referenceDate.getUTCMonth() + 1;
+
+  for (const user of users) {
+    const userReports = byUser.get(user.userId) ?? [];
+    const plans = await getPlansForUserMonth({ userId: user.userId, year, month });
+    const paceStats = await calculateMetricPaceForUserMonth({
+      plans,
+      reports: userReports,
+      year,
+      month,
+      referenceDate,
+    });
+    paceByUser.set(user.userId, paceStats);
+  }
+
   const summary = buildTeamSummary(
     users,
     byUser,
     disciplineByUser,
+    paceByUser,
     params.startDate,
     params.endDate,
     teamId,
