@@ -151,6 +151,34 @@ export async function listReportsByUserAndDateRange(params: {
   return results;
 }
 
+export async function listReportsForUsersInDateRange(params: {
+  userIds: string[];
+  startDate: string;
+  endDate: string;
+}): Promise<DailyReportRecord[]> {
+  const { userIds, startDate, endDate } = params;
+  const set = new Set(userIds);
+  if (set.size === 0) return [];
+  const rows = await getSheetRows(SHEET_NAME);
+  if (!rows || rows.length <= 1) return [];
+  const [, ...dataRows] = rows;
+
+  const results: DailyReportRecord[] = [];
+  dataRows.forEach((row, index) => {
+    const parsed = parseReportRow(row, index + 2);
+    if (!parsed) return;
+    if (!set.has(parsed.data.userId)) return;
+    if (
+      parsed.data.reportDate >= startDate &&
+      parsed.data.reportDate <= endDate
+    ) {
+      results.push(parsed.data);
+    }
+  });
+
+  return results;
+}
+
 export async function upsertReportForUserAndDate(
   userId: string,
   reportDate: string,

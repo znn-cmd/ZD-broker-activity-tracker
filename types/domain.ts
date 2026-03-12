@@ -58,6 +58,42 @@ export type MonthlyPlanRecord = {
   updatedBy: string;
 };
 
+export type CommentTargetType = "daily_report" | "user_period" | "plan_review";
+export type CommentVisibility = "manager_private" | "manager_to_broker" | "admin_internal";
+
+export type CommentRecord = {
+  commentId: string;
+  targetType: CommentTargetType;
+  targetId: string;
+  subjectUserId: string;
+  authorUserId: string;
+  visibility: CommentVisibility;
+  commentText: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReminderRecord = {
+  reminderId: string;
+  userId: string;
+  reportDate: string;
+  channel: string;
+  status: string;
+  sentAt: string;
+  payloadJson: string;
+  createdAt: string;
+};
+
+export type AuditLogEntry = {
+  logId: string;
+  userId: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  payloadJson: string;
+  createdAt: string;
+};
+
 export type MetricKey =
   // Buyer
   | "buyer_incoming_lead_total"

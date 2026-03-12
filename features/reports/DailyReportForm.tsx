@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { saveDailyReport, loadDailyReportWithPlanning } from "./report-actions";
 import type { DailyReportPayload, DailyReportWithPlanning } from "./report-actions";
 
 type Props = {
   initialDate: string;
+  onPlanningStateChange?: (state: DailyReportWithPlanning | null) => void;
 };
 
 type Status = "idle" | "saving" | "saved" | "error";
 
-export function DailyReportForm({ initialDate }: Props) {
+export function DailyReportForm({ initialDate, onPlanningStateChange }: Props) {
   const [date, setDate] = useState(initialDate);
   const [form, setForm] = useState<DailyReportPayload>(() =>
     emptyPayload(initialDate),
@@ -58,6 +60,7 @@ export function DailyReportForm({ initialDate }: Props) {
           setForm(emptyPayload(date));
         }
         setServerState(state);
+        onPlanningStateChange?.(state);
       } catch (e) {
         console.error(e);
         if (isMounted) {
@@ -68,12 +71,12 @@ export function DailyReportForm({ initialDate }: Props) {
     return () => {
       isMounted = false;
     };
-  }, [date]);
+  }, [date, onPlanningStateChange]);
 
   useMemo(() => {
     if (!serverState?.report) return;
     // Placeholder for future unsaved-changes tracking / beforeunload protection
-  }, [form, serverState]);
+  }, [serverState]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -86,11 +89,14 @@ export function DailyReportForm({ initialDate }: Props) {
       };
       const result = await saveDailyReport(normalized);
       setServerState(result);
+      onPlanningStateChange?.(result);
       setStatus("saved");
+      toast.success("Report saved");
     } catch (err) {
       console.error(err);
       setError("Failed to save report.");
       setStatus("error");
+      toast.error("Failed to save report");
     }
   }
 

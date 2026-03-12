@@ -92,3 +92,21 @@ export async function getRemainingWorkingDaysInMonth(
   return count;
 }
 
+/** Returns array of ISO date strings (YYYY-MM-DD) for working days in [startDate, endDate] inclusive. */
+export async function getWorkingDaysInRange(
+  startDate: string,
+  endDate: string,
+): Promise<string[]> {
+  const out: string[] = [];
+  const start = new Date(startDate + "T12:00:00Z");
+  const end = new Date(endDate + "T12:00:00Z");
+  const cur = new Date(start);
+  while (cur <= end) {
+    if (await isWorkingDay(cur)) {
+      out.push(cur.toISOString().slice(0, 10));
+    }
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  return out;
+}
+

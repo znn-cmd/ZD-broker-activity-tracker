@@ -3,10 +3,11 @@ import { getGoogleAuthClient } from "./googleAuth";
 
 let cachedSheets: sheets_v4.Sheets | null = null;
 
-function getSheetsClient() {
+function getSheetsClient(): sheets_v4.Sheets {
   if (cachedSheets) return cachedSheets;
   const auth = getGoogleAuthClient();
-  cachedSheets = google.sheets({ version: "v4", auth: auth as any });
+  type AuthArg = NonNullable<Parameters<typeof google.sheets>[0]["auth"]>;
+  cachedSheets = google.sheets({ version: "v4", auth: auth as AuthArg });
   return cachedSheets;
 }
 

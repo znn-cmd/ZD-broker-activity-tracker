@@ -1,5 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
-import { appendSheetRow, getSheetRows, updateSheetRow } from "@/lib/google/sheetsClient";
+import {
+  appendSheetRow,
+  getSheetRows,
+  updateSheetRow,
+} from "@/lib/google/sheetsClient";
 import type { UserRecord } from "@/types/domain";
 import { UserRole } from "@/types/domain";
 
@@ -149,4 +153,31 @@ export async function createInitialAdminIfNeeded() {
 
   await appendSheetRow(SHEET_NAME, serializeUserRow(user));
 }
+
+export async function updateUserRoleAndStatus(params: {
+  userId: string;
+  role: UserRole;
+  isActive: boolean;
+}) {
+  const rows = await getSheetRows(SHEET_NAME);
+  if (!rows || rows.length <= 1) return;
+
+  const [, ...dataRows] = rows;
+
+  for (let i = 0; i < dataRows.length; i += 1) {
+    const parsed = parseUserRow(dataRows[i], i + 2);
+    if (!parsed) continue;
+    if (parsed.data.userId === params.userId) {
+      const updated: UserRecord = {
+        ...parsed.data,
+        role: params.role,
+        isActive: params.isActive,
+        updatedAt: new Date().toISOString(),
+      };
+      await updateSheetRow(SHEET_NAME, parsed.rowIndex, serializeUserRow(updated));
+      return;
+    }
+  }
+}
+
 

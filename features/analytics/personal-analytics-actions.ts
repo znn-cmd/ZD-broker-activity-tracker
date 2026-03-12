@@ -5,11 +5,13 @@ import { authOptions } from "@/server/auth/auth-options";
 import { listReportsByUserAndDateRange } from "@/lib/repositories/reports-repository";
 import { getPlansForUserMonth } from "@/lib/repositories/plans-repository";
 import { calculateMetricPaceForUserMonth } from "@/analytics/planning";
+import { getDisciplineForPeriod } from "@/analytics/discipline";
 import {
   buildPersonalAnalyticsSummary,
   type PeriodType,
   type PersonalAnalyticsSummary,
 } from "@/analytics/personalAnalytics";
+import type { MetricKey } from "@/types/domain";
 
 type SessionUser = {
   id: string;
@@ -18,6 +20,56 @@ type SessionUser = {
 export type PersonalAnalyticsResponse = {
   summary: PersonalAnalyticsSummary;
 };
+
+function getPreviousRange(
+  startDate: string,
+  endDate: string,
+): { previousStart: string; previousEnd: string } {
+  const start = new Date(startDate + "T12:00:00Z");
+  const end = new Date(endDate + "T12:00:00Z");
+  const days = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
+  const previousEnd = new Date(start);
+  previousEnd.setUTCDate(previousEnd.getUTCDate() - 1);
+  const previousStart = new Date(previousEnd);
+  previousStart.setUTCDate(previousStart.getUTCDate() - days + 1);
+  return {
+    previousStart: previousStart.toISOString().slice(0, 10),
+    previousEnd: previousEnd.toISOString().slice(0, 10),
+  };
+}
+
+function aggregateTotals(
+  reports: Awaited<ReturnType<typeof listReportsByUserAndDateRange>>,
+): Record<MetricKey, number> {
+  const keys: MetricKey[] = [
+    "buyer_incoming_lead_total",
+    "buyer_contact_established",
+    "buyer_qualified",
+    "buyer_agents",
+    "buyer_meeting_confirmed",
+    "buyer_meeting_held",
+    "buyer_number_of_bookings",
+    "buyer_booking_commission_amount",
+    "seller_incoming_requests",
+    "seller_number_of_cold_calls",
+    "seller_requested_documents",
+    "seller_sent_contract",
+    "seller_objects_entered_xoms",
+    "seller_listed_property",
+    "seller_sold_objects",
+    "seller_total_sales_amount",
+  ];
+  const totals: Record<string, number> = {};
+  keys.forEach((k) => {
+    totals[k] = 0;
+  });
+  reports.forEach((r) => {
+    keys.forEach((k) => {
+      totals[k] += (r[k] as number) ?? 0;
+    });
+  });
+  return totals as Record<MetricKey, number>;
+}
 
 export async function getPersonalAnalytics(params: {
   periodType: PeriodType;
@@ -33,11 +85,24 @@ export async function getPersonalAnalytics(params: {
   const { periodType } = params;
   const { startDate, endDate } = resolveRange(periodType, params);
 
-  const reports = await listReportsByUserAndDateRange({
+  const [reports, previousRange] = await Promise.all([
+    listReportsByUserAndDateRange({ userId, startDate, endDate }),
+    (async () => getPreviousRange(startDate, endDate))(),
+  ]);
+
+  const previousReports = await listReportsByUserAndDateRange({
+    userId,
+    startDate: previousRange.previousStart,
+    endDate: previousRange.previousEnd,
+  });
+  const previousTotals = aggregateTotals(previousReports);
+
+  const discipline = await getDisciplineForPeriod(
     userId,
     startDate,
     endDate,
-  });
+    reports,
+  );
 
   const refDate = new Date(endDate);
   const year = refDate.getUTCFullYear();
@@ -58,6 +123,10 @@ export async function getPersonalAnalytics(params: {
     startDate,
     endDate,
     paceStats,
+    disciplinePct: discipline.completionPct,
+    previousTotals,
+    previousStart: previousRange.previousStart,
+    previousEnd: previousRange.previousEnd,
   });
 
   return { summary };
