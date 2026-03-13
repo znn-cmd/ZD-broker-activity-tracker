@@ -341,7 +341,7 @@ function MetricSection({
           return (
             <div
               key={metric.key}
-              className="flex items-center justify-between gap-2 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5"
+              className="flex items-center justify-between gap-3 rounded-md border border-slate-100 bg-slate-50 px-2 py-1.5"
             >
               <div className="flex flex-col">
                 <span className="text-[11px] font-medium text-slate-700">
@@ -353,10 +353,10 @@ function MetricSection({
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-[11px]">
+              <div className="flex items-center gap-1 text-[11px]">
                 <input
                   type="number"
-                  className="w-14 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-right text-[11px] text-slate-700 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/40"
+                  className="w-16 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-right text-[11px] text-slate-700 outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500/40"
                   value={manual}
                   min={0}
                   onChange={(e) => {
@@ -372,7 +372,7 @@ function MetricSection({
                   }}
                 />
                 <span
-                  className={`rounded-md px-2 py-0.5 text-[11px] ${
+                  className={`w-16 text-right rounded-md px-2 py-0.5 text-[11px] ${
                     auto == null ? "bg-slate-100 text-slate-500" : bgClass || "bg-white text-slate-700 border border-slate-200"
                   }`}
                 >

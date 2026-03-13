@@ -151,7 +151,9 @@ export function LivePerformancePanel({ state }: Props) {
                 <p className="mt-1 text-[10px] text-slate-600">
                   MTD {stat.actualMonthToDate} · Pace{" "}
                   {pacePct != null ? `${pacePct.toFixed(0)}%` : "—"} · Target/day{" "}
-                  {stat.dailyBaselineMinimumTarget.toFixed(1)}
+                  {metricKey === "seller_total_sales_amount"
+                    ? stat.monthlyPlan.toFixed(1)
+                    : stat.dailyBaselineMinimumTarget.toFixed(1)}
                 </p>
               )}
             </div>
@@ -183,10 +185,13 @@ export function LivePerformancePanel({ state }: Props) {
             <tbody>
               {planRows.map(({ metricKey, label }) => {
                 const { stat } = getMetricPace(metricKey);
-                const dailyTarget =
-                  stat?.dailyBaselineMinimumTarget != null
-                    ? stat.dailyBaselineMinimumTarget
-                    : null;
+                let dailyTarget: number | null = null;
+                if (stat) {
+                  dailyTarget =
+                    metricKey === "seller_total_sales_amount"
+                      ? stat.monthlyPlan
+                      : stat.dailyBaselineMinimumTarget;
+                }
                 let actualToday = 0;
                 if (r) {
                   actualToday = (r[metricKey] as number) ?? 0;
