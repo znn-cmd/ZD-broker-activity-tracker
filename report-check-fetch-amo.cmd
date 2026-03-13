@@ -1,5 +1,5 @@
 @echo off
 cd /d C:\Users\ZNN\Desktop\ZD-DailyReport\broker-activity-tracker
-powershell -ExecutionPolicy Bypass -File ".\report-check-fetch-amo.ps1"
-pause
+rem Запускаем PowerShell и НЕ закрываем окно после выполнения, чтобы видеть логи
+powershell -NoExit -ExecutionPolicy Bypass -File ".\report-check-fetch-amo.ps1"
 

@@ -22,6 +22,33 @@ const { chromium } = require("playwright");
 const LINKS_SHEET = "report_check_links";
 const AUTO_SHEET = "report_check_auto_values";
 
+function normalizeUrl(rawUrl) {
+  if (!rawUrl) return "";
+  let url = String(rawUrl).trim();
+
+  // Если это ссылка вида https://www.google.com/url?q=...&sa=...
+  if (url.startsWith("https://www.google.com/url?")) {
+    try {
+      const u = new URL(url);
+      const q = u.searchParams.get("q");
+      if (q) {
+        url = q;
+      }
+    } catch (e) {
+      console.error("Failed to parse Google redirect URL:", url, e.message);
+    }
+  }
+
+  // Пробуем один раз декодировать, чтобы убрать двойное экранирование (%255B -> %5B / '[').
+  try {
+    url = decodeURIComponent(url);
+  } catch (e) {
+    // оставляем как есть
+  }
+
+  return url;
+}
+
 function getReportDateFromArgs() {
   const arg = process.argv[2];
   if (arg) return arg;
@@ -68,6 +95,7 @@ function getSheetsClient() {
 
 async function loadAllLinks() {
   const { sheets, spreadsheetId } = getSheetsClient();
+  console.log("Reading links from spreadsheet:", spreadsheetId, "sheet:", LINKS_SHEET);
   const res = await sheets.spreadsheets.values.get({
     spreadsheetId,
     range: `${LINKS_SHEET}!A:Z`,
@@ -79,7 +107,13 @@ async function loadAllLinks() {
   for (const row of dataRows) {
     const [userId, metricKey, url] = row;
     if (!userId || !metricKey || !url) continue;
-    items.push({ userId, metricKey, url });
+    const normalized = normalizeUrl(url);
+    console.log("Loaded link row:", {
+      userId,
+      metricKey,
+      urlSnippet: String(normalized).slice(0, 120),
+    });
+    items.push({ userId, metricKey, url: normalized });
   }
   return items;
 }
@@ -87,6 +121,7 @@ async function loadAllLinks() {
 async function appendAutoValues(records) {
   if (records.length === 0) return;
   const { sheets, spreadsheetId } = getSheetsClient();
+  console.log("Appending auto values to sheet:", AUTO_SHEET, "count:", records.length);
   await sheets.spreadsheets.values.append({
     spreadsheetId,
     range: `${AUTO_SHEET}!A:Z`,
@@ -110,6 +145,8 @@ async function loginToAmo(page) {
     throw new Error("AMO_LOGIN and AMO_PASSWORD must be set");
   }
 
+  console.log("Logging into amoCRM as:", login);
+
   await page.goto("https://zimaamo.amocrm.ru/", { waitUntil: "load" });
 
   await page.fill('input[name="login"], input[name="username"]', login);
@@ -119,16 +156,24 @@ async function loginToAmo(page) {
     'button[type="submit"], button:has-text("Войти"), button:has-text("Log in")',
   );
 
-  await page.waitForLoadState("networkidle");
+  // В amoCRM часто идут фоновые запросы, поэтому "networkidle" может не наступить.
+  // Достаточно дождаться события "load" с увеличенным таймаутом.
+  try {
+    await page.waitForLoadState("load", { timeout: 120000 });
+  } catch (e) {
+    console.warn("waitForLoadState(load) after login timed out, продолжаем дальше");
+  }
 }
 
 async function fetchNumericFromUrl(url, sharedContext) {
   const { browser, page } = sharedContext;
   try {
+    console.log("Opening URL:", url);
     await page.goto(url, { waitUntil: "load", timeout: 120000 });
     const locator = page.locator(".list-top-search__summary-text");
     await locator.waitFor({ timeout: 60000 });
     const text = await locator.innerText();
+    console.log("Raw summary text:", JSON.stringify(text));
     const match = text.match(/\d+/);
     const numeric = match ? Number(match[0]) : null;
     return Number.isFinite(numeric) ? numeric : null;
